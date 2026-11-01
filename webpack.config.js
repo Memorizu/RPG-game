@@ -11,18 +11,28 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
     clean: true,
-    assetModuleFilename: 'images/[name][ext]',
+    assetModuleFilename: 'images/[name]-[contenthash:8][ext]',
   },
 
   devtool: 'source-map',
 
   module: {
     rules: [
+      // JavaScript
       {
         test: /\.js$/,
+        type: 'javascript/auto',
         exclude: /node_modules/,
         use: 'babel-loader',
       },
+
+      // CSS
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+
+      // Images
       {
         test: /\.(png|jpe?g|gif|svg|webp|ico)$/i,
         type: 'asset/resource',
