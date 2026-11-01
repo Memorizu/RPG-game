@@ -1,4 +1,4 @@
-import { calcTileType } from '../src/js/utils';
+import { calcTileType } from "../src/js/utils";
 
 
 describe('calcTileType', () => {
