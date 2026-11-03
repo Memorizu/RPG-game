@@ -47,3 +47,8 @@ export function calcHealthLevel(health) {
 
   return 'high';
 }
+
+
+export function showCharacterInfo(level, attack, defence, health) {
+  return `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`;
+}

@@ -66,7 +66,7 @@ export default class GamePlay {
   /**
    * Draws positions (with chars) on boardEl
    *
-   * @param positions array of PositionedCharacter objects
+   * @param positions array of CharacterInfo objects
    */
   redrawPositions(positions) {
     for (const cell of this.cells) {
@@ -177,7 +177,7 @@ export default class GamePlay {
     this.loadGameListeners.forEach(o => o.call(null));
   }
 
-  static showError(message) {
+  showError(message) {
     alert(message);
   }
 

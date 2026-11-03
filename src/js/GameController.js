@@ -1,6 +1,7 @@
 import { generateTeam } from './generators';
 import allowedTypes from './characters/allowedTypes';
-import PositionedCharacter from './PositionedCharacter';
+import CharacterInfo from './CharacterInfo';
+import { showCharacterInfo } from './utils';
 
 
 export default class GameController {
@@ -9,22 +10,60 @@ export default class GameController {
     this.stateService = stateService;
     this.maxLevel = 4;
     this.characterCount = 3;
-  }
+
+    this.gameInfo = {
+      currentPlayer: "player",
+      characters: [],
+    }
+
+    this.onCellEnter = this.onCellEnter.bind(this);
+    this.onCellClick = this.onCellClick.bind(this);
+  }   
 
   init() {
     // TODO: add event listeners to gamePlay events
     // TODO: load saved stated from stateService
+    this.gamePlay.addCellEnterListener(this.onCellEnter);
+    this.gamePlay.addCellClickListener(this.onCellClick);
 
     this.gamePlay.drawUi('prairie');
     this.startGame();
+    this.selectedCell = null;
   }
 
+
   onCellClick(index) {
-    // TODO: react to click
+    const character = this.gameInfo.characters.find(
+      character => character.position === index,
+    );
+
+    if (!character) return;
+
+    if (character.belongsTo === 'player') {
+      if (this.selectedCell !== null) {
+        this.gamePlay.deselectCell(this.selectedCell);
+      }
+
+      this.gamePlay.selectCell(index);
+      this.selectedCell = index;
+    } else {
+      this.gamePlay.showError('You cannot select enemy characters!');
+    }
   }
 
   onCellEnter(index) {
-    // TODO: react to mouse enter
+    const isCharacter = this.gameInfo.characters.some(character => character.position === index);
+
+    if (isCharacter) {
+      let character = this.gameInfo.characters.find(character => character.position === index);
+      const message = showCharacterInfo(
+        character.stats.level,
+        character.stats.attack,
+        character.stats.defence,
+        character.stats.health,
+      );
+      this.gamePlay.showCellTooltip(message, index);
+    }
   }
 
   onCellLeave(index) {
@@ -35,17 +74,14 @@ export default class GameController {
     const players = generateTeam(allowedTypes.players.classes, this.maxLevel, this.characterCount);
     const enemies = generateTeam(allowedTypes.enemies.classes, this.maxLevel, this.characterCount);
 
-    const charactersCells = this.setupField(players, enemies);
-    console.log(charactersCells)
+    const gameInfo = this.setupField(players, enemies);
 
-    const positionedCharacters = charactersCells.map(
-      ({ character, position }) => new PositionedCharacter(character, position),
-    );
-
-    this.gamePlay.redrawPositions(positionedCharacters);
+    this.saveGameInfo(gameInfo)
+    this.gamePlay.redrawPositions(gameInfo);
   }
   
   setupField(players, enemies) {
+    const charactersInfo = [];
     const boardSize = this.gamePlay.boardSize;
     const playerMembers = players.toArray();
     const enemyMembers = enemies.toArray();
@@ -63,16 +99,37 @@ export default class GameController {
       enemyMembers.length,
     );
 
-    return [
-      ...playerMembers.map((character, index) => ({
-        character,
-        position: playerPositions[index],
-      })),
-      ...enemyMembers.map((character, index) => ({
-        character,
-        position: enemyPositions[index],
-      })),
-    ];
+    for (let playerMember of playerMembers) {
+      const position = playerPositions.pop();
+      const playerCharacterInfo = new CharacterInfo(
+        playerMember,
+        position,
+        {
+          level: playerMember.level,
+          health: playerMember.health,
+          attack: playerMember.attack,
+          defence: playerMember.defence,
+        }
+      );
+      charactersInfo.push(playerCharacterInfo);
+    }
+
+    for (let enemyMember of enemyMembers) {
+      const position = enemyPositions.pop();
+      const enemyCharacterInfo = new CharacterInfo(
+        enemyMember,
+        position,
+        {
+          level: enemyMember.level,
+          health: enemyMember.health,
+          attack: enemyMember.attack,
+          defence: enemyMember.defence,
+        }
+      );
+      charactersInfo.push(enemyCharacterInfo);
+    }
+
+    return charactersInfo;
   }
 
   getColumnIndexes(boardSize, columns) {
@@ -96,5 +153,13 @@ export default class GameController {
     }
 
     return shuffled.slice(0, count);
+  }
+
+  saveGameInfo(gameInfo) {
+    this.gameInfo.characters = gameInfo;
+  }
+
+  changePlayer() {
+    this.gameInfo.currentPlayer = this.gameInfo.currentPlayer === 'player' ? 'enemy' : 'player';
   }
 }

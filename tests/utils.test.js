@@ -1,4 +1,5 @@
 import { calcTileType } from "../src/js/utils";
+import { showCharacterInfo } from "../src/js/utils";
 
 
 describe('calcTileType', () => {
@@ -40,5 +41,20 @@ describe('calcTileType — invalid arguments', () => {
     [0, 2.5],
   ])('throws TypeError for non-integer arguments', (index, boardSize) => {
     expect(() => calcTileType(index, boardSize)).toThrow(TypeError);
+  });
+});
+
+
+describe('showCharacterInfo', () => {
+  test('must return correct string', () => {
+    const result = showCharacterInfo(1, 10, 40, 50);
+
+    expect(result).toBe('🎖1 ⚔10 🛡40 ❤50');
+  });
+
+  test('must handle zero stats correctly', () => {
+    const result = showCharacterInfo(0, 0, 0, 0);
+
+    expect(result).toBe('🎖0 ⚔0 🛡0 ❤0');
   });
 });
