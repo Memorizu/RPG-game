@@ -3,7 +3,7 @@ import allowedTypes  from './characters/allowedTypes';
 
 
 export default class CharacterInfo {
-  constructor(character, position, stats) {
+  constructor(character, position) {
     if (!(character instanceof Character)) {
       throw new Error('character must be instance of Character or its children');
     }
@@ -14,11 +14,10 @@ export default class CharacterInfo {
 
     this.character = character;
     this.position = position;
-    this.stats = stats;
-    this.belongsTo = this.getBelongsTo();
+    this.membership = this.getMembership();
   }
 
-  getBelongsTo() {
+  getMembership() {
     if (this.character instanceof allowedTypes.players.classes[0] || this.character instanceof allowedTypes.players.classes[1] || this.character instanceof allowedTypes.players.classes[2]) {
       return 'player';
     } else if (this.character instanceof allowedTypes.enemies.classes[0] || this.character instanceof allowedTypes.enemies.classes[1] || this.character instanceof allowedTypes.enemies.classes[2]) {
@@ -26,6 +25,10 @@ export default class CharacterInfo {
     } else {
       throw new Error('character must be instance of allowed types');
     }
+  }
+
+  changePosition(newPosition) {
+    this.position = newPosition;
   }
 
 }
