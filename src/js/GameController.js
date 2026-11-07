@@ -3,6 +3,9 @@ import allowedTypes from './characters/allowedTypes';
 import CharacterInfo from './CharacterInfo';
 import { showCharacterInfo, getAvailableCells } from './utils';
 import cursors from './cursors';
+import themes from './themes';
+import GameState from './GameState';
+import Team from './Team';
 
 
 export default class GameController {
@@ -14,6 +17,7 @@ export default class GameController {
     this.movingCursor = null;
     this.attackCursor = null;
     this.notAllowedCursor = null;
+    this.stageGenerator = this.getStage();
 
     this.gameInfo = {
       currentPlayer: "player",
@@ -23,24 +27,54 @@ export default class GameController {
         attack: [],
         move: [],
       },
-      stage: "prairie"
-
+      theme: themes.prairie,
     }
 
     this.onCellEnter = this.onCellEnter.bind(this);
     this.onCellClick = this.onCellClick.bind(this);
     this.onCellLeave = this.onCellLeave.bind(this);
+    this.onNewGameClick = this.onNewGameClick.bind(this);
+    this.onSaveGameClick = this.onSaveGameClick.bind(this);
+    this.onLoadGameClick = this.onLoadGameClick.bind(this);
   }   
 
   init() {
-    // TODO: load saved stated from stateService
     this.gamePlay.addCellEnterListener(this.onCellEnter);
     this.gamePlay.addCellClickListener(this.onCellClick);
     this.gamePlay.addCellLeaveListener(this.onCellLeave);
 
-    this.gamePlay.drawUi(this.gameInfo.stage);
+    this.gamePlay.addNewGameListener(this.onNewGameClick);
+    this.gamePlay.addSaveGameListener(this.onSaveGameClick);
+    this.gamePlay.addLoadGameListener(this.onLoadGameClick);
+
+    this.gamePlay.drawUi(this.gameInfo.theme);
     this.startGame();
     
+  }
+
+  onNewGameClick() {
+    this.resetGame();
+  }
+
+  onSaveGameClick() {
+    const state = GameState.from(this.gameInfo);
+    this.stateService.save(state);
+    console.log("Saved state:", state);
+  }
+
+  onLoadGameClick() {
+    const state = this.stateService.load();
+    
+    if (!state) {
+      this.gamePlay.showError('Сохранение не найдено!');
+      return;
+    }
+
+    this.gameInfo = GameState.toGameInfo(state);
+
+    this.gamePlay.drawUi(this.gameInfo.theme);
+    this.gamePlay.redrawPositions(this.gameInfo.characters);
+    console.log(`Loaded saved state: ${state}`);
   }
 
 
@@ -135,10 +169,10 @@ export default class GameController {
     const players = generateTeam(allowedTypes.players.classes, this.maxLevel, this.characterCount);
     const enemies = generateTeam(allowedTypes.enemies.classes, this.maxLevel, this.characterCount);
 
-    const gameInfo = this.setupField(players, enemies);
+    const charactersInfos = this.setupField(players, enemies);
 
-    this.saveGameInfo(gameInfo)
-    this.gamePlay.redrawPositions(gameInfo);
+    this.saveCharactersToGameInfo(charactersInfos)
+    this.gamePlay.redrawPositions(charactersInfos);
   }
   
   setupField(players, enemies) {
@@ -198,6 +232,9 @@ export default class GameController {
     const attacker = attackerInfo.character;
     const target = targetInfo.character;
 
+    console.log(attacker)
+    console.log(target)
+
     const damage = attacker.attack(target);
 
     this.gamePlay.showDamage(targetInfo.position, damage).then(() => {
@@ -206,6 +243,17 @@ export default class GameController {
       if (!target.isAlive()) {
         const index = this.gameInfo.characters.indexOf(targetInfo);
         this.gameInfo.characters.splice(index, 1);
+
+        const isWin = this.checkWin();
+
+        if (isWin) {
+          const characterInfos = this.gameInfo.characters
+          characterInfos.map(characterInfo => {
+            characterInfo.character.levelUp()
+          })
+          this.saveCharactersToGameInfo(characterInfos)
+          this.updateStage()
+        }
       }
 
       this.gamePlay.redrawPositions(this.gameInfo.characters);
@@ -334,8 +382,8 @@ export default class GameController {
     return shuffled.slice(0, count);
   }
 
-  saveGameInfo(gameInfo) {
-    this.gameInfo.characters = gameInfo;
+  saveCharactersToGameInfo(characters) {
+    this.gameInfo.characters = characters;
   }
 
   changePlayer() {
@@ -462,4 +510,68 @@ export default class GameController {
     this.gamePlay.redrawPositions(this.gameInfo.characters);
     this.changePlayer();
   }
+
+  checkWin() {
+    const enemies = this.gameInfo.characters.filter(
+      character => character.membership === 'enemy',
+    );
+    
+    if (!enemies.length) {
+      return true;
+    }
+    return false
+  }
+
+  *getStage() {
+    const stages = Object.values(themes).slice(1);
+
+    for (const stage of stages) {
+      yield stage;
+    }
+  }
+
+  updateStage() {
+    const { value: nextTheme, done } = this.stageGenerator.next();
+
+    if (done) {
+      this.gameOver();
+      return;
+    }
+
+    const playerTeam = new Team();
+    this.gameInfo.characters.map(player => playerTeam.add(player.character));
+
+    console.log('players', playerTeam);
+    const enemyTeam = generateTeam(allowedTypes.enemies.classes, this.maxLevel, this.characterCount);
+    console.log('enemies', enemyTeam);
+    const characterInfo = this.setupField(playerTeam, enemyTeam);
+    this.gameInfo.currentPlayer = 'player';
+    this.saveCharactersToGameInfo(characterInfo);
+
+    this.gameInfo.theme = nextTheme;
+    this.gamePlay.drawUi(this.gameInfo.theme);
+    this.gamePlay.redrawPositions(this.gameInfo.characters);
+  }
+
+  gameOver() {
+    this.resetGame();
+  }
+
+  resetGame() {
+    this.gameInfo = {
+      currentPlayer: 'player',
+      characters: [],
+      selectedCell: null,
+      currentRanges: {
+        attack: [],
+        move: [],
+      },
+      theme: themes.prairie,
+    };
+
+    this.stageGenerator = this.getStage();
+    this.gamePlay.drawUi(this.gameInfo.theme);
+    this.startGame();
+  }
+
 }

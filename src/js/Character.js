@@ -19,6 +19,14 @@ export default class Character {
       throw new Error(`Invalid character type: ${type}`);
     }
 
+    if (level < 1 || level > 4) {
+      throw new Error(`Invalid character level: ${level}`);
+    }
+    if (level > 1) {
+      for (let i = 1; i < level; i++) {
+        this.levelUp();
+      }
+    }
     this.level = level;
     this._attack = 0;
     this.defence = 0;
@@ -29,7 +37,14 @@ export default class Character {
   }
 
   levelUp() {
-    
+    this.health += 80
+    if (this.health > 100) {
+      this.health = 100
+    }
+
+    this._attack = Math.max(this._attack, this._attack * (80 + this.health) / 100)
+    this.defence = Math.max(this.defence, this.defence * (80 + this.health) / 100)
+
   }
 
   attack(enemy) {
@@ -47,6 +62,4 @@ export default class Character {
   isAlive() {
     return this.health > 0;
   }
-
-
 }
