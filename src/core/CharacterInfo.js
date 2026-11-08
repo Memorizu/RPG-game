@@ -1,4 +1,4 @@
-import Character from './Character';
+import Character from './characters/Character';
 import allowedTypes  from './characters/allowedTypes';
 
 

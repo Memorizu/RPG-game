@@ -253,6 +253,7 @@ export default class GameController {
           })
           this.saveCharactersToGameInfo(characterInfos)
           this.updateStage()
+          return
         }
       }
 
