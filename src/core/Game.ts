@@ -83,6 +83,12 @@ export default class Game {
     // console.log(`Loaded saved state: ${state}`);
   }
 
+  startGame() {
+    const characters = this.createCharacters();
+    this.board.setCharacters(characters);
+    this.UI.redrawPositions(this.board.getCharacters());
+  }
+
  
   public get isPlayerTurn(): boolean {
     return this.currentTurn === 'player';
@@ -103,6 +109,7 @@ export default class Game {
   onCellClick(index: number) {
 
     const characterWithPosition = this.board.getCharacterWithPosition(index);
+    
     const isCharacterSelected = this.state.selectedCell !== null;
     const character = characterWithPosition?.character;
 
@@ -121,7 +128,7 @@ export default class Game {
     const isInAttackRange = this.board.currentAttackRange.includes(index);
     const isInMoveRange = this.board.currentMoveRange.includes(index);
 
-    if (character?.faction === 'enemy' && isInAttackRange) {
+    if (character?.faction === 'enemy' && isInAttackRange && characterWithPosition) {
       const enemyWithPosition = characterWithPosition;
       const selectedCell = this.state.selectedCell;
       if (!selectedCell) return;
@@ -189,14 +196,6 @@ export default class Game {
     }
   }
 
-  startGame() {
-
-    const characters = this.createCharacters();
-    this.board.setCharacters(characters);
-    this.UI.redrawPositions(this.board.getCharacters());
-  }
-
-
   private createCharacters(): Character[] {
     const characters: Character[] = [];
 
@@ -211,7 +210,6 @@ export default class Game {
     return characters;
   }
   
-
   moveCharacter(index: number) {
     if (!this.state.selectedCell) return;
     const character = this.board.getCharacterByPosition(this.state.selectedCell);
@@ -242,17 +240,12 @@ export default class Game {
       if (!target.isAlive()) {
         this.board.removeCharacter(target);
 
-      //   const isWin = this.checkWin();
+        const isWin = this.checkWin();
 
-      //   if (isWin) {
-      //     const characterInfos = this.gameInfo.characters
-      //     characterInfos.map(characterInfo => {
-      //       characterInfo.character.levelUp()
-      //     })
-      //     this.saveCharactersToGameInfo(characterInfos)
-      //     this.updateStage()
-      //     return
-      //   }
+        if (isWin) {
+          this.restart()
+          return
+        }
       }
 
       this.UI.redrawPositions(this.board.getCharacters());
@@ -347,118 +340,114 @@ export default class Game {
   }
 
   async makeMove() {
-    // const enemiesInfo = this.gameInfo.characters.filter(
-    //   character => character.membership === 'enemy',
-    // );
 
-    // const playersInfo = this.gameInfo.characters.filter(
-    //   character => character.membership === 'player',
-    // );
+    const enemies = this.board.getCharactersWithPosition('enemy');
 
-    // if (!enemiesInfo.length || !playersInfo.length) return;
+    const players = this.board.getCharactersWithPosition('player');
 
-    // const randomIndex = Math.floor(Math.random() * enemiesInfo.length);
-    // const enemy = enemiesInfo[randomIndex];
+    if (!enemies.length || !players.length) return;
 
-    // const availableAttackCells = getAvailableCells(
-    //   this.gamePlay.boardSize,
-    //   enemy.position,
-    //   enemy.character.attackRange,
-    // );
+    const randomIndex = Math.floor(Math.random() * enemies.length);
+    const enemy = enemies[randomIndex]!;
+  
+      
+    const availableMoveCells = this.board.getAvailableCells(
+      enemy.position,
+      enemy.character.moveRange,
+    );
 
-    // const availableMoveCells = getAvailableCells(
-    //   this.gamePlay.boardSize,
-    //   enemy.position,
-    //   enemy.character.moveRange,
-    // );
+    const availableAttackCells = this.board.getAvailableCells(
+      enemy.position,
+      enemy.character.attackRange,
+    )
 
-    // const attackTargets = playersInfo.filter(
-    //   player => availableAttackCells.includes(player.position),
-    // );
+    const attackTargets = players.filter(
+      player => availableAttackCells.includes(player.position),
+    );
 
-    // if (attackTargets.length) {
-    //   const nearestTarget = attackTargets.reduce((nearest, player) => (
-    //     this.getDistance(enemy.position, player.position)
-    //       < this.getDistance(enemy.position, nearest.position)
-    //       ? player
-    //       : nearest
-    //   ));
+    if (attackTargets.length) {
+      const nearestTarget = attackTargets.reduce((nearest, player) => (
+        this.getDistance(enemy.position, player.position)
+          < this.getDistance(enemy.position, nearest.position)
+          ? player
+          : nearest
+      ));
 
-    //   this.attackCharacter(enemy, nearestTarget);
-    //   return;
-    // }
+      this.attackCharacter(enemy, nearestTarget);
+      return;
+    }
 
-    // const availableMoves = availableMoveCells.filter(
-    //   cell => !this.getCharacterByPosition(cell),
-    // );
+    const availableMoves = availableMoveCells.filter(
+      cell => !this.board.getCharacterByPosition(cell),
+    );
 
-    // if (!availableMoves.length) {
-    //   this.changePlayer();
-    //   return;
-    // }
+    if (!availableMoves.length) {
+      this.changePlayer();
+      return;
+    }
 
-    // const nearestPlayer = playersInfo.reduce((nearest, player) => (
-    //   this.getDistance(enemy.position, player.position)
-    //     < this.getDistance(enemy.position, nearest.position)
-    //     ? player
-    //     : nearest
-    // ));
+    const nearestPlayer = players.reduce((nearest, player) => (
+      this.getDistance(enemy.position, player.position)
+        < this.getDistance(enemy.position, nearest.position)
+        ? player
+        : nearest
+    ));
 
-    // const bestMove = availableMoves.reduce((best, cell) => {
-    //   const distance = this.getDistance(
-    //     cell,
-    //     nearestPlayer.position,
-    //   );
+    const bestMove = availableMoves.reduce((best, cell) => {
+      const distance = this.getDistance(
+        cell,
+        nearestPlayer.position,
+      );
 
-    //   const bestDistance = this.getDistance(
-    //     best,
-    //     nearestPlayer.position,
-    //   );
+      const bestDistance = this.getDistance(
+        best!,
+        nearestPlayer.position,
+      );
 
-    //   if (distance < bestDistance) return cell;
+      if (distance < bestDistance) return cell;
 
-    //   if (
-    //     distance === bestDistance
-    //     && this.getDistance(enemy.position, cell)
-    //       > this.getDistance(enemy.position, best)
-    //   ) {
-    //     return cell;
-    //   }
+      if (
+        distance === bestDistance
+        && this.getDistance(enemy.position, cell)
+          > this.getDistance(enemy.position, best!)
+      ) {
+        return cell;
+      }
 
-    //   return best;
-    // }, availableMoves[0]);
+      return best;
+    }, availableMoves[0]);
 
-    // if (
-    //   this.getDistance(bestMove, nearestPlayer.position)
-    //   >= this.getDistance(enemy.position, nearestPlayer.position)
-    // ) {
-    //   this.changePlayer();
-    //   return;
-    // }
+    if (
+      this.getDistance(bestMove!, nearestPlayer.position)
+      >= this.getDistance(enemy.position, nearestPlayer.position)
+    ) {
+      this.changePlayer();
+      return;
+    }
 
-    // this.moveEnemy(enemy, bestMove);
+    this.moveEnemy(enemy.character, bestMove!);
   }
 
-  // getDistance(from, to) {
-  //   const boardSize = this.gamePlay.boardSize;
+  getDistance(from: number, to: number) {
+    const boardSize = this.board.boardSize;
 
-  //   const fromRow = Math.floor(from / boardSize);
-  //   const fromCol = from % boardSize;
+    const fromRow = Math.floor(from / boardSize);
+    const fromCol = from % boardSize;
 
-  //   const toRow = Math.floor(to / boardSize);
-  //   const toCol = to % boardSize;
+    const toRow = Math.floor(to / boardSize);
+    const toCol = to % boardSize;
 
-  //   return Math.max(
-  //     Math.abs(fromRow - toRow),
-  //     Math.abs(fromCol - toCol),
-  //   );
-  // }
+    return Math.max(
+      Math.abs(fromRow - toRow),
+      Math.abs(fromCol - toCol),
+    );
+  }
 
-  // moveEnemy(enemy, index) {
-  //   enemy.changePosition(index);
-  //   this.gamePlay.redrawPositions(this.gameInfo.characters);
-  //   this.changePlayer();
-  // }
+  moveEnemy(enemy: Character, index: number) {
+    this.board.changePosition(enemy, index);
+    this.UI.redrawPositions(this.board.getCharacters());
+    this.changePlayer();
+  }
 
   checkWin() {
     const characters = this.board.getCharacters()
@@ -471,48 +460,8 @@ export default class Game {
     return false
   }
 
-  // updateStage() {
-  //   const { value: nextTheme, done } = this.stageGenerator.next();
-
-  //   if (done) {
-  //     this.gameOver();
-  //     return;
-  //   }
-
-  //   const playerTeam = new Team();
-  //   this.gameInfo.characters.map(player => playerTeam.add(player.character));
-
-  //   console.log('players', playerTeam);
-  //   const enemyTeam = generateTeam(allowedTypes.enemies.classes, this.maxLevel, this.characterCount);
-  //   console.log('enemies', enemyTeam);
-  //   const characterInfo = this.setupField(playerTeam, enemyTeam);
-  //   this.gameInfo.currentPlayer = 'player';
-  //   this.saveCharactersToGameInfo(characterInfo);
-
-  //   this.gameInfo.theme = nextTheme;
-  //   this.gamePlay.drawUi(this.gameInfo.theme);
-  //   this.gamePlay.redrawPositions(this.gameInfo.characters);
-  // }
-
-  // gameOver() {
-  //   this.resetGame();
-  // }
-
-  // resetGame() {
-  //   this.gameInfo = {
-  //     currentPlayer: 'player',
-  //     characters: [],
-  //     selectedCell: null,
-  //     currentRanges: {
-  //       attack: [],
-  //       move: [],
-  //     },
-  //     theme: themes.prairie,
-  //   };
-
-  //   this.stageGenerator = this.getStage();
-  //   this.gamePlay.drawUi(this.gameInfo.theme);
-  //   this.startGame();
-  // }
+  restart() {
+    this.startGame();
+  }
 
 }

@@ -1,5 +1,5 @@
 import Character from "./characters/Character";
-import { CharacterWithPosition, Theme } from "./types";
+import { CharacterWithPosition, Faction, Theme } from "./types";
 import { gameConfig } from "./config/gameConfig";
 
 
@@ -68,7 +68,7 @@ export default class GameBoard {
     this.characters.set(newPosition, character);
   }
 
-  saveMoveAndAttackCells(cellIndex: number, character: Character) {
+  public saveMoveAndAttackCells(cellIndex: number, character: Character) {
     const availableAttackCells = this.getAvailableCells(
       cellIndex,
       character.attackRange,
@@ -80,6 +80,7 @@ export default class GameBoard {
 
     this.currentAttackRange = availableAttackCells;
     this.currentMoveRange = availableMoveCells;
+
   }
 
   private validatePosition(position: number): void {
@@ -116,22 +117,18 @@ export default class GameBoard {
   }
 
   public getCharacterWithPosition(position: number): CharacterWithPosition {
-    const character = this.getCharacterByPosition(position);
-
-    if (!character) {
-      throw new Error('Character not found at position');
-    }
-
     return {
-      character,
+      character: this.characters.get(position)!,
       position,
     };
   }
 
   public setCharacters(characters: Character[]): void {
-
     const playerIndexes = this.getColumnIndexes([0, 1]);
-    const enemyIndexes = this.getColumnIndexes([this.boardSize - 2, this.boardSize - 1]);
+    const enemyIndexes = this.getColumnIndexes([
+      this.boardSize - 2,
+      this.boardSize - 1,
+    ]);
 
     const playerPositions = this.getRandomPositions(
       playerIndexes,
@@ -143,11 +140,17 @@ export default class GameBoard {
       gameConfig.teamSize,
     );
 
-    for (let character of characters) {
-      const position = playerPositions.pop() || enemyPositions.pop();
-      if (!position) {
-        continue;
+    for (const character of characters) {
+      const positions = character.faction === 'player'
+        ? playerPositions
+        : enemyPositions;
+
+      const position = positions.pop();
+
+      if (position === undefined) {
+        throw new Error(`No available position for ${character.faction}`);
       }
+
       this.addCharacter(character, position);
     }
   }
@@ -184,7 +187,13 @@ export default class GameBoard {
     return indexes;
   }
 
-  private getAvailableCells(position: number, range: number): number[] {
+  public getCharactersWithPosition(faction: Faction): CharacterWithPosition[]  {
+    return [...this.characters].map(
+      ([position, character]) => ({ character, position }),
+    ).filter(({ character }) => character.faction === faction);
+  }
+
+  public getAvailableCells(position: number, range: number): number[] {
     const availableCells = [];
 
     const currentRow = Math.floor(position / this.boardSize);
