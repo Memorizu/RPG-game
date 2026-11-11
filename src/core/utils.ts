@@ -1,6 +1,6 @@
 
 
-export function calcTileType(index, boardSize) {
+export function calcTileType(index: number, boardSize: number): string {
   
   if (!Number.isInteger(index) || !Number.isInteger(boardSize)) {
     throw new TypeError('index and boardSize must be integers');
@@ -36,7 +36,7 @@ export function calcTileType(index, boardSize) {
 }
 
 
-export function calcHealthLevel(health) {
+export function calcHealthLevel(health: number): string {
   if (health < 15) {
     return 'critical';
   }
@@ -49,35 +49,12 @@ export function calcHealthLevel(health) {
 }
 
 
-export function showCharacterInfo(level, attack, defence, health) {
+export function showCharacterInfo(
+  level: number, 
+  attack: number, 
+  defence: number, 
+  health: number
+): string {
   return `🎖${level} ⚔${attack} 🛡${defence} ❤${health}`;
 }
 
-
-export function getAvailableCells(boardSize, position, range) {
-  const availableCells = [];
-
-  const currentRow = Math.floor(position / boardSize);
-  const currentCol = position % boardSize;
-
-  for (let row = currentRow - range; row <= currentRow + range; row += 1) {
-    for (let col = currentCol - range; col <= currentCol + range; col += 1) {
-      if (
-        row < 0
-        || row >= boardSize
-        || col < 0
-        || col >= boardSize
-      ) {
-        continue;
-      }
-
-      if (row === currentRow && col === currentCol) {
-        continue;
-      }
-
-      availableCells.push(row * boardSize + col);
-    }
-  }
-
-  return availableCells;
-}

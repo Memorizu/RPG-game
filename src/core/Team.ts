@@ -1,25 +1,31 @@
 import Character from "./characters/Character";
+import { Faction } from "./types";
 
 
 export default class Team {
+  public readonly faction: Faction;
+  public readonly members: Set<Character>;
 
-  members: Set<Character>;
-
-  constructor() {
+  constructor(faction: Faction) {
+    this.faction = faction;
     this.members = new Set();
   }
 
   add(character: Character) {
-    if (!(character instanceof Character)) {
-      throw new Error('character must be instance of Character or its children');
+    if (character.faction !== this.faction) {
+      throw new Error('Character faction does not match team faction');
     }
 
     this.members.add(character);
   }
 
-  addAll(characters: Character[]) {
+  remove(character: Character) {
+    this.members.delete(character);
+  }
+
+  addAll(characters: Character[]): void {
     for (const character of characters) {
-      this.members.add(character);
+      this.add(character);
     }
   }
 

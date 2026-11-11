@@ -51,6 +51,21 @@ export default abstract class Character {
     }
   }
 
+  public isAlive(): boolean {
+    return this.health > 0;
+  }
+
+  public attackCharacter(damage: number, target: Character): void {
+    target.receiveDamage(damage);
+  }
+
+  private receiveDamage(damage: number): void {
+    if (damage <= 0) {
+      return;
+    }
+    this.health = Math.max(0, this.health - damage);
+  }
+
   public calculateDamage(enemy: Character): number {
     return Math.max(
       this.attack - enemy.defence,
@@ -58,19 +73,5 @@ export default abstract class Character {
     );
   }
 
-  public attackCharacter(enemy: Character): void {
-    const damage = this.calculateDamage(enemy);
-    enemy.receiveDamage(damage);
-  }
-
-  public receiveDamage(damage: number): void {
-    if (damage <= 0) {
-      return;
-    }
-    this.health = Math.max(0, this.health - damage);
-  }
-
-  public isAlive(): boolean {
-    return this.health > 0;
-  }
+  
 }

@@ -5,16 +5,21 @@ import Swordsman from "./characters/Swordsman";
 import Undead from "./characters/Undead";
 import Vampire from "./characters/Vampire";
 
+import { CharacterClasses } from "./types";
 
-export const CHARACTER_REGISTRY = {
-  player: {
-    bowman: Bowman,
-    swordsman: Swordsman,
-    magician: Magician,
-  },
-  enemy: {
-    daemon: Daemon,
-    undead: Undead,
-    vampire: Vampire,
-  },
-} as const;
+
+
+const playerClasses: CharacterClasses = [
+  Bowman,
+  Swordsman,
+  Magician,
+];
+
+const enemyClasses: CharacterClasses = [
+  Daemon,
+  Undead,
+  Vampire,
+];
+
+
+export { playerClasses, enemyClasses };
