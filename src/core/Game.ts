@@ -460,6 +460,27 @@ export default class Game {
     return false
   }
 
+  updateStage() {
+
+    this.board.changeTheme();
+    const players = this.board.getCharactersWithPosition('player');
+    const enemies = this.createCharacters();
+
+    const playerTeam = new Team();
+    this.gameInfo.characters.map(player => playerTeam.add(player.character));
+
+    console.log('players', playerTeam);
+    const enemyTeam = generateTeam(allowedTypes.enemies.classes, this.maxLevel, this.characterCount);
+    console.log('enemies', enemyTeam);
+    const characterInfo = this.setupField(playerTeam, enemyTeam);
+    this.gameInfo.currentPlayer = 'player';
+    this.saveCharactersToGameInfo(characterInfo);
+
+    this.gameInfo.theme = nextTheme;
+    this.gamePlay.drawUi(this.gameInfo.theme);
+    this.gamePlay.redrawPositions(this.gameInfo.characters);
+  }
+
   restart() {
     this.startGame();
   }
