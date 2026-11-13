@@ -63,18 +63,21 @@ export default class GameController {
   }
 
   onLoadGameClick() {
-    const state = this.stateService.load();
-    
-    if (!state) {
-      this.gamePlay.showError('Сохранение не найдено!');
-      return;
+    try {
+      const state = this.stateService.load();
+
+      if (!state) {
+        this.gamePlay.showError('Сохранение не найдено!');
+        return;
+      }
+
+      this.gameInfo = GameState.toGameInfo(state);
+
+      this.gamePlay.drawUi(this.gameInfo.theme);
+      this.gamePlay.redrawPositions(this.gameInfo.characters);
+    } catch (error) {
+      this.gamePlay.showError('Не удалось загрузить сохранение!');
     }
-
-    this.gameInfo = GameState.toGameInfo(state);
-
-    this.gamePlay.drawUi(this.gameInfo.theme);
-    this.gamePlay.redrawPositions(this.gameInfo.characters);
-    console.log(`Loaded saved state: ${state}`);
   }
 
 

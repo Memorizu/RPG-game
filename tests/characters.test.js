@@ -10,12 +10,12 @@ import { getAvailableCells } from '../src/js/utils';
 
 
 describe.each([
-  [Bowman, 'bowman', 25, 25, 2, 2],
-  [Daemon, 'daemon', 10, 10, 1, 4],
-  [Magician, 'magician', 10, 40, 1, 4],
-  [Swordsman, 'swordsman', 40, 10, 4, 1],
-  [Undead, 'undead', 40, 10, 4, 1],
-  [Vampire, 'vampire', 25, 25, 2, 2],
+  [Bowman, 'bowman', 40, 5, 2, 2],
+  [Daemon, 'daemon', 30, 10, 1, 4],
+  [Magician, 'magician', 50, 5, 1, 4],
+  [Swordsman, 'swordsman', 30, 20, 4, 1],
+  [Undead, 'undead', 30, 20, 4, 1],
+  [Vampire, 'vampire', 50, 5, 2, 2],
 ])(
   '%s',
   (CharacterClass, type, attack, defence, moveRange, attackRange) => {
@@ -30,7 +30,7 @@ describe.each([
     });
 
     test('имеет правильную атаку', () => {
-      expect(character.attack).toBe(attack);
+      expect(character._attack).toBe(attack);
     });
 
     test('имеет правильную защиту', () => {
@@ -61,7 +61,11 @@ describe.each([
 
     const cells = getAvailableCells(8, 27, character.moveRange);
 
-    expect(cells).toHaveLength((2 * moveRange + 1) ** 2 - 1);
+    expect(cells).toHaveLength({
+      1: 8,
+      2: 24,
+      4: 63,
+    }[moveRange]);
   });
 
   test('возвращает правильное количество клеток атаки', () => {
@@ -69,6 +73,37 @@ describe.each([
 
     const cells = getAvailableCells(8, 27, character.attackRange);
 
-    expect(cells).toHaveLength((2 * attackRange + 1) ** 2 - 1);
+    expect(cells).toHaveLength({
+      1: 8,
+      2: 24,
+      4: 63,
+    }[attackRange]);
+  });
+});
+
+
+describe('Character attack', () => {
+  test('уменьшает защиту противника из значения атаки', () => {
+    const attacker = new Bowman(1);
+    const enemy = new Swordsman(1);
+
+    expect(attacker.attack(enemy)).toBe(20);
+  });
+
+  test('наносит минимум 10% от собственной атаки', () => {
+    const attacker = new Bowman(1);
+    const enemy = new Swordsman(1);
+
+    enemy.defence = 50;
+
+    expect(attacker.attack(enemy)).toBe(4);
+  });
+  
+  test('выбрасывает ошибку при передаче некорректного противника', () => {
+    const attacker = new Bowman(1);
+
+    expect(() => attacker.attack({ defence: 10 })).toThrow(
+      'enemy must be instance of Character',
+    );
   });
 });

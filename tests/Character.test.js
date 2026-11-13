@@ -30,12 +30,12 @@ describe('Character', () => {
 
 describe('Character level 1 stats', () => {
   test.each([
-    [Bowman, 'bowman', 25, 25],
-    [Swordsman, 'swordsman', 40, 10],
-    [Magician, 'magician', 10, 40],
-    [Daemon, 'daemon', 10, 10],
-    [Undead, 'undead', 40, 10],
-    [Vampire, 'vampire', 25, 25],
+    [Bowman, 'bowman', 40, 5],
+    [Swordsman, 'swordsman', 30, 20],
+    [Magician, 'magician', 50, 5],
+    [Daemon, 'daemon', 30, 10],
+    [Undead, 'undead', 30, 20],
+    [Vampire, 'vampire', 50, 5],
   ])(
     '%s has correct level 1 stats',
     (CharacterClass, type, attack, defence) => {
@@ -44,7 +44,7 @@ describe('Character level 1 stats', () => {
       expect(character).toMatchObject({
         level: 1,
         type,
-        attack,
+        _attack: attack,
         defence,
         health: 50,
       });
